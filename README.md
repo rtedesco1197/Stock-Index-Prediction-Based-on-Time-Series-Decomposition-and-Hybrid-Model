@@ -17,5 +17,6 @@ I am left with a few questions/notes:
 2. The authors note that 200 epochs results in the best model for predicting stock indexes, but I found this to severly overfit for the case of a single stock. I use 50 epochs to predict one day ahead for VOO.
 3. How are one-step-ahead predictions formed for the ARMA portion? Should we feed in the prior IMFs for each prediction, or just tell ARMA to generate n time steps into the future (ie random walk it).
 4. Seasonality in the ARMA portion of the ensemble... T or F?
+5. I believe this model needs text/sentiment data before beginning to think about predictions further than one day ahead. 
 
 Plots coming soon.
