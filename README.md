@@ -15,5 +15,5 @@ I am left with a few questions/notes:
 
 1. Normalzing data for LSTM? Do you denormalize before or after ensembling the LSTM predictions?
 2. The authors note that 200 epochs results in the best model, but I found this to severly overfit. I use 50 epochs.
-3. How are one step ahead predictions exactly formed for the ARMA portion? Should we feed in the prior IMFs for each prediction, or just tell ARMA to generate n time steps into the future.
-4. Seasonality in the ARMA portion of the ensemble?
+3. How are one-step-ahead predictions formed for the ARMA portion? Should we feed in the prior IMFs for each prediction, or just tell ARMA to generate n time steps into the future.
+4. Seasonality in the ARMA portion of the ensemble... T or F?
