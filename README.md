@@ -1,7 +1,7 @@
 # Stock-Index-Prediction-Based-on-Time-Series-Decomposition-and-Hybrid-Model(CAL)
 Implementation of the 2022 paper: https://doi.org/10.3390/e24020146
 
-For this implementation, I used Python, most notably the keras and numpy libraries.
+For this implementation, I used Python, most notably the keras, PyEMD, pmdarima, and numpy libraries.
 
 The procedure is as follows:
 1. Import ticker data
