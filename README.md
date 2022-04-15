@@ -1,5 +1,6 @@
 # Stock-Index-Prediction-Based-on-Time-Series-Decomposition-and-Hybrid-Model(CAL)
 Implementation of the 2022 paper: https://doi.org/10.3390/e24020146
+The main purpose of this project is to implement the CAL model as defined in the paper above as an ensemble of multiple LSTM and ARMA models which are fit depending on whether or not an intrinsic mode function (IMF) from CEEMDAN is stationary.
 
 For this implementation, I used Python, most notably the keras, PyEMD, pmdarima, and numpy libraries.
 
