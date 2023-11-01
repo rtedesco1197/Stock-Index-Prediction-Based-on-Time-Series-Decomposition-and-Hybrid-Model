@@ -1,6 +1,7 @@
 #Implementing the CAL model (CEEMDAN-ARMA-LSTM) proposed by Pin Lv, Qinjuan Wu, Jia Xu, and Yating Shu (2021).
 #Stock Index Prediction Based on Time Series Decomposition and Hybrid Model
 #https://doi.org/10.3390/e24020146
+
 import numpy as np
 import yfinance as yf
 import datetime as dt
@@ -36,12 +37,19 @@ class StockData:
         self.test_prices = test_prices.reshape(1, len(test_prices))
 
 start = dt.datetime(2007, 1, 1)
-end = dt.datetime(2023, 10, 21)
-symbol = 'AMZN' 
+end = dt.datetime(2023, 10, 1)
+symbol = 'AMZN'
 stock_data = StockData(start, end, symbol)
+print(stock_data.test_prices)
 
-def CEEMDAN_fit_pred(prices, test_prices):
-    if __name__ == "__main__":
+class CAL_model:
+  def __init__(self, prices, test_prices):
+    self.prices = prices
+    self.test_prices = test_prices
+    self.load_data()
+
+  def preprocessing(self):
+     if __name__ == "__main__":
         #CEEMDAN to extract IMF's (Intrinsic Mode Functions) and residual term from time series.
         ceemdan = CEEMDAN()
         cIMFs = ceemdan(prices)
@@ -78,84 +86,79 @@ def CEEMDAN_fit_pred(prices, test_prices):
         ARMAtest = np.transpose(ARMAtest)
 
         #Lag each of the 4 train/test variables for one step ahead prediction.
-        NNtrain_step_ahead = np.delete(NNtrain, 1, 1)
-        NNtrain = np.delete(NNtrain, -1, 1)
-        NNtest_step_ahead = np.delete(NNtest, 1, 1)
-        NNtest = np.delete(NNtest, -1, 1)
+        self.NNtrain_step_ahead = np.delete(NNtrain, 1, 1)
+        self.NNtrain = np.delete(NNtrain, -1, 1)
+        self.NNtest_step_ahead = np.delete(NNtest, 1, 1)
+        self.NNtest = np.delete(NNtest, -1, 1)
 
         print("AYOOOO IDIOT")
         print(NNtest)
 
-        ARMAtrain_step_ahead = np.delete(ARMAtrain, 1, 1)
-        ARMAtrain = np.delete(ARMAtrain, -1, 1)
-        ARMAtest_step_ahead = np.delete(ARMAtest, 1, 1)
-        ARMAtest = np.delete(ARMAtest, -1, 1)
-        ARMA_IDF_preds = []
-
-        #Build ARMA model to predict stationary (non-volatile) IMFs
-        for i in range(ARMAtrain.shape[0]):
-            #Since Python only has auto arima, I set d=0 to optimize an equivalent arma(p,q) model.
-            model = pmdarima.auto_arima(ARMAtrain[i], max_d=0, max_D=0, d=0, D=0, seasonal=False)
-            tempPreds = model.predict(n_periods=ARMAtest.shape[1] - 10)
-            print(tempPreds)
-            ARMA_IDF_preds.append(tempPreds)
+        #ARMAtrain_step_ahead = np.delete(ARMAtrain, 1, 1)
+        self.ARMAtrain = np.delete(ARMAtrain, -1, 1)
+        self.ARMAtest_step_ahead = np.delete(ARMAtest, 1, 1)
+        self.ARMAtest = np.delete(ARMAtest, -1, 1)
 
 
-        #Build LSTM neural network to predict non-stationary (volatile) IMFs
-        m = Sequential()
-        m.add(LSTM(units=128, input_shape=(10, 1), return_sequences=True))
-        #m.add(Dropout(0.1))
-        m.add(LSTM(units=64, activation='relu', return_sequences=True))
-        #m.add(Dropout(0.1))
-        m.add(LSTM(units=16, activation='tanh', return_sequences=True))
-        m.add(Dense(units=1))
-        m.compile(optimizer='adam', loss='mean_squared_error')
-        # reshape input to be [samples, time steps, features]
-        NNtrain = np.transpose(NNtrain)
-        NNtrain_step_ahead = np.transpose(NNtrain_step_ahead)
-        NNtest = np.transpose(NNtest)
-        NNtest_step_ahead = np.transpose(NNtest_step_ahead)
+  def fit_model(self):
+      #Build ARMA model to predict stationary (non-volatile) IMFs
+      self.ARMA_IDF_preds = []
+      for i in range(fit_test.ARMAtrain.shape[0]):
+        #Since Python only has auto arima, I set d=0 to optimize an equivalent arma(p,q) model.
+        model = pmdarima.auto_arima(fit_test.ARMAtrain[i], max_d=0, max_D=0, d=0, D=0, seasonal=False)
+        tempPreds = model.predict(n_periods=fit_test.ARMAtest.shape[1] - 10)
+        print(tempPreds)
+        fit_test.ARMA_IDF_preds.append(tempPreds)
 
-        LSTM_IDF_preds = []
-        for i in range(NNtest.shape[1]):
-            generator = TimeseriesGenerator(NNtrain[:, i], NNtrain_step_ahead[:, i], length=10, batch_size=128)
-            history = m.fit(generator, epochs=50, verbose=1)
-            generator_test = TimeseriesGenerator(NNtest[:, i], NNtest_step_ahead[:, i], length=10, batch_size=128)
-            yhat_test = m.predict(generator_test, verbose=0)
-            yhat_test = GlobalAveragePooling1D()(yhat_test)
-            LSTM_IDF_preds.append(yhat_test)
+      #Build LSTM neural network to predict non-stationary (volatile) IMFs
+      m = Sequential()
+      m.add(LSTM(units=128, input_shape=(10, 1), return_sequences=True))
+      #m.add(Dropout(0.1))
+      m.add(LSTM(units=64, activation='relu', return_sequences=True))
+      #m.add(Dropout(0.1))
+      m.add(LSTM(units=16, activation='tanh', return_sequences=True))
+      m.add(Dense(units=1))
+      m.compile(optimizer='adam', loss='mean_squared_error')
+      # reshape input to be [samples, time steps, features]
+      NNtrain = np.transpose(NNtrain)
+      NNtrain_step_ahead = np.transpose(NNtrain_step_ahead)
+      NNtest = np.transpose(NNtest)
+      NNtest_step_ahead = np.transpose(NNtest_step_ahead)
 
-        #print(np.shape(LSTM_IDF_preds))
-        #CAL Predictions: We sum forecasts across each previous model for IMFs and residue
-        #Now we concatenate our predictions and sum across each IDF from the ARMA and LSTM models.
-        sum_LSTM_preds = np.sum(LSTM_IDF_preds, axis=0)
-        print(np.shape(LSTM_IDF_preds))
-        print(np.shape(ARMA_IDF_preds))
-        
-        sum_ARMA_preds= np.asarray(ARMA_IDF_preds)
-        sum_LSTM_preds = np.transpose(sum_LSTM_preds)
+      self.LSTM_IDF_preds = []
+      for i in range(NNtest.shape[1]):
+        generator = TimeseriesGenerator(NNtrain[:, i], NNtrain_step_ahead[:, i], length=10, batch_size=128)
+        history = m.fit(generator, epochs=50, verbose=1)
+        generator_test = TimeseriesGenerator(NNtest[:, i], NNtest_step_ahead[:, i], length=10, batch_size=128)
+        yhat_test = m.predict(generator_test, verbose=0)
+        yhat_test = GlobalAveragePooling1D()(yhat_test)
+        fit_test.LSTM_IDF_preds.append(yhat_test)
 
-        if sum_ARMA_preds.shape[0] != 1:
-            sum_ARMA_preds = np.sum(ARMA_IDF_preds, axis=0)
-        #Finally, sum our LSTM and ARMA preds.
-        finalpreds = np.add(sum_LSTM_preds, sum_ARMA_preds)
-        print(finalpreds.shape)
-        print(finalpreds)
-        print(test_prices)
-        #How'd we do? RMSE is ~30, given that VOO is $400 a share, our model is roughly ~10% off on average
-        RMSE = np.sqrt(mean_squared_error(finalpreds, test_prices))
-        print(RMSE)
-        #Plot forecast vs actual
-        pyplot.plot(np.reshape(test_prices, (test_prices.shape[1], 1)), label='Actual')
-        pyplot.plot(np.reshape(finalpreds, (finalpreds.shape[1], 1)), label='Predicted')
-        pyplot.legend()
-        pyplot.show()
-        return finalpreds
+  def predictions(self):
+      sum_LSTM_preds = np.sum(fit_test.LSTM_IDF_preds, axis=0)
+      print(np.shape(fit_test.LSTM_IDF_preds))
+      print(np.shape(fit_test.ARMA_IDF_preds))
 
-fit_test = CEEMDAN_fit_pred(stock_data.prices, stock_data.test_prices)
-fit_test
+      sum_ARMA_preds= np.asarray(fit_test.ARMA_IDF_preds)
+      sum_LSTM_preds = np.transpose(sum_LSTM_preds)
+      #Finally, sum our LSTM and ARMA preds.
+      self.finalpreds = np.add(sum_LSTM_preds, sum_ARMA_preds)
+      print(fit_test.finalpreds.shape)
+      print(fit_test.finalpreds)
+      print(fit_test.test_prices)
+      #How'd we do? RMSE is ~30, given that VOO is $400 a share, our model is roughly ~10% off on average
+      RMSE = np.sqrt(mean_squared_error(fit_test.finalpreds, fit_test.test_prices))
+      print(RMSE)
+      #Plot forecast vs actual
+      pyplot.plot(np.reshape(fit_test.test_prices, (fit_test.test_prices.shape[1], 1)), label='Actual')
+      pyplot.plot(np.reshape(fit_test.finalpreds, (fit_test.finalpreds.shape[1], 1)), label='Predicted')
+      pyplot.legend()
+      pyplot.show()
+
+cal = CAL_model(stock_data.prices, stock_data.test_prices)
+cal
+fit_test=np.transpose(cal)
 stock_data.test_prices = np.transpose(stock_data.test_prices)
-
 
 #Detect large predicted price movements?
 def trade_strat(initial_shares):
@@ -167,16 +170,17 @@ def trade_strat(initial_shares):
     print(timeframe)
     timeframe_months = round(len(stock_data.test_prices)/30,1)
 
+
     for i in range(1,len(fit_test)):
-        if fit_test[i] > fit_test[i-1] + sd_pred*.01 and total_shares < 150:
+        if fit_test[i] > fit_test[i-1] - sd_pred*3 and total_shares < 150:
             buy_sell_signal[i] = 1
-            total_shares += 10
-            print("Buy!")
-        if fit_test[i] < fit_test[i-1] - sd_pred*.01 and total_shares>=10:
-            buy_sell_signal[i] = -1
             total_shares -= 10
             print("Sell!")
- 
+        if fit_test[i] < fit_test[i-1] - sd_pred*3 and total_shares>=10:
+            buy_sell_signal[i] = -1
+            total_shares += 10
+            print("Buy!")
+
     end_position = total_shares*stock_data.test_prices[len(stock_data.test_prices) - 1]
     if_held_initial = initial_shares * stock_data.test_prices[len(stock_data.test_prices) - 1]
     gain_over_hold_strat = end_position - if_held_initial
